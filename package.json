@@ -1,1 +1,14 @@
-{"name": "movie-list-app", "version": "1.0.0", "private": true, "description": "Movie List App with Backend and Frontend", "scripts": {"dev:backend": "cd backend && npm run dev", "dev:frontend": "cd frontend && npm run dev"}, "workspaces": ["backend", "frontend"]}
+{
+  "name": "movie-list-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Movie List App with Backend and Frontend",
+  "scripts": {
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev"
+  },
+  "workspaces": [
+    "backend",
+    "frontend"
+  ]
+}
