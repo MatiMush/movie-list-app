@@ -41,6 +41,10 @@ const App: React.FC = () => {
     const [selectedCategoryGenre, setSelectedCategoryGenre] = useState<number | null>(null);
     const [isSearchMode, setIsSearchMode] = useState<boolean>(false);
     const [currentPage, setCurrentPage] = useState<number>(1);
+    
+    // New state for combined filters
+    const [selectedGenreFilter, setSelectedGenreFilter] = useState<number | null>(null);
+    const [selectedYearFilter, setSelectedYearFilter] = useState<number | null>(null);
 
     // Fetch movies based on category or search
     useEffect(() => {
@@ -50,7 +54,16 @@ const App: React.FC = () => {
                 setError('');
                 let response;
 
-                if (isSearchMode && searchQuery.trim() !== '') {
+                // If filters are active (genre or year), use discover endpoint
+                if (selectedGenreFilter || selectedYearFilter) {
+                    response = await axios.get(`${API_BASE_URL}/movies/discover`, {
+                        params: { 
+                            genre: selectedGenreFilter,
+                            year: selectedYearFilter,
+                            page: currentPage 
+                        }
+                    });
+                } else if (isSearchMode && searchQuery.trim() !== '') {
                     // Search mode
                     response = await axios.get(`${API_BASE_URL}/movies/search`, {
                         params: { query: searchQuery, page: currentPage }
@@ -85,19 +98,7 @@ const App: React.FC = () => {
         };
 
         fetchMovies();
-    }, [activeCategory, selectedCategoryGenre, searchQuery, isSearchMode, currentPage]);
-
-    // Apply local filters (year) to displayed movies
-    useEffect(() => {
-        let filtered = movies;
-
-        // Apply year filter
-        if (selectedYear !== 'all') {
-            filtered = filtered.filter(movie => movie.year === parseInt(selectedYear));
-        }
-
-        setFilteredMovies(filtered);
-    }, [selectedYear, movies]);
+    }, [activeCategory, selectedCategoryGenre, searchQuery, isSearchMode, currentPage, selectedGenreFilter, selectedYearFilter]);
 
     // Get unique years from current movies, with fallback to full range
     const years = getYearsFromMovies(movies);
@@ -135,6 +136,22 @@ const App: React.FC = () => {
         setSearchQuery('');
         setCurrentPage(1);
         setSelectedYear('all');
+        // Reset combined filters when switching categories
+        setSelectedGenreFilter(null);
+        setSelectedYearFilter(null);
+    };
+    
+    // Handle genre filter change
+    const handleGenreFilterChange = (genreId: number | null) => {
+        setSelectedGenreFilter(genreId);
+        setCurrentPage(1); // Reset to first page
+    };
+    
+    // Handle year filter change
+    const handleYearFilterChange = (year: string) => {
+        setSelectedYear(year);
+        setSelectedYearFilter(year === 'all' ? null : parseInt(year));
+        setCurrentPage(1); // Reset to first page
     };
 
     return (
@@ -210,15 +227,30 @@ const App: React.FC = () => {
                 </div>
             )}
 
-            <div className="filters">
+            <div className="filters-combined">
                 <div className="filter-group">
-                    <label htmlFor="year-filter">Filter by Year:</label>
+                    <label htmlFor="genre-filter">🎭 Filter by Genre:</label>
+                    <select
+                        id="genre-filter"
+                        value={selectedGenreFilter || ''}
+                        onChange={(e) => handleGenreFilterChange(e.target.value ? parseInt(e.target.value) : null)}
+                    >
+                        <option value="">All Genres</option>
+                        {availableGenres.map(genre => (
+                            <option key={genre.id} value={genre.id}>
+                                {genre.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+                <div className="filter-group">
+                    <label htmlFor="year-filter">📅 Filter by Year:</label>
                     <select
                         id="year-filter"
                         value={selectedYear}
-                        onChange={(e) => setSelectedYear(e.target.value)}
+                        onChange={(e) => handleYearFilterChange(e.target.value)}
                     >
-                        <option value="all">Show All</option>
+                        <option value="all">All Years</option>
                         {years.map(year => (
                             <option key={year} value={year}>{year}</option>
                         ))}
@@ -228,6 +260,13 @@ const App: React.FC = () => {
 
             {loading && <div className="loading">Loading movies...</div>}
             {error && <div className="error">{error}</div>}
+            
+            {!loading && filteredMovies.length > 0 && (
+                <div className="results-info">
+                    Showing {filteredMovies.length} movie{filteredMovies.length !== 1 ? 's' : ''}
+                    {(selectedGenreFilter || selectedYearFilter) && ' matching your filters'}
+                </div>
+            )}
 
             <div className="movies-grid">
                 {filteredMovies.map(movie => (

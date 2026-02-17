@@ -203,6 +203,19 @@ body {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
+.filters-combined {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    justify-content: center;
+    margin: 20px 0;
+    flex-wrap: wrap;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
 .filter-group {
     display: flex;
     flex-direction: column;
@@ -234,6 +247,18 @@ body {
     outline: none;
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.results-info {
+    text-align: center;
+    padding: 15px;
+    margin-bottom: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 10px;
+    font-weight: 600;
+    color: #555;
+    font-size: 1rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .movies-grid {
@@ -368,6 +393,11 @@ body {
     }
 
     .filters {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .filters-combined {
         flex-direction: column;
         gap: 15px;
     }
