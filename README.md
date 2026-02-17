@@ -1,28 +1,113 @@
 # Movie List App
 
-## Overview
-The Movie List App is a monorepo project designed to manage and organize a collection of movies. Its primary goal is to provide users with an easy-to-use interface to view, add, update, and delete movies from their personal list.
+A monorepo movie list application with React frontend and Express backend.
 
-## Features
-- **User Authentication**: Secure login and registration process.
-- **Search Functionality**: Quickly find movies by title, genre, or rating.
-- **Responsive Design**: Mobile-friendly interface for users on-the-go.
-- **Multiple Views**: Grid and list views for displaying movie information.
-- **Backend Integration**: Real-time data handling through a robust API.
+## 🏗️ Project Structure
 
-## Tech Stack
-- **Frontend**: Built with React, Redux, and styled-components.
-- **Backend**: Node.js and Express.js with MongoDB for database management.
+```
+movie-list-app/
+├── package.json          # Root monorepo package
+├── frontend/            # React + Vite application
+│   ├── src/
+│   │   ├── App.tsx
+│   │   ├── main.tsx
+│   │   └── index.css
+│   ├── index.html
+│   ├── vite.config.ts
+│   └── package.json
+└── backend/             # Express + TypeScript API
+    ├── src/
+    │   ├── server.ts    # Main server file
+    │   ├── controllers/
+    │   └── routes/
+    ├── tsconfig.json
+    └── package.json
+```
 
-## Installation
-1. Clone the repository: `git clone https://github.com/MatiMush/movie-list-app.git`
-2. Navigate to the project directory and follow the installation instructions provided for the frontend and backend.
+## 🚀 Tech Stack
 
-## Usage
-- After installation, run the application by following the startup guides in the README of the respective frontend and backend folders.
+### Frontend
+- **React 18.2** - UI library
+- **TypeScript** - Type safety
+- **Vite** - Build tool and dev server
+- **React Router** - Client-side routing
+- **Axios** - HTTP client
 
-## Contribution
-Contributions are welcome! Feel free to submit issues or pull requests for features and enhancements.
+### Backend
+- **Express 4.18** - Web framework
+- **TypeScript** - Type safety
+- **CORS** - Cross-origin resource sharing
+- **Dotenv** - Environment variables
+- **Axios** - HTTP client (for TMDB API)
 
-## License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## 📦 Installation
+
+### Install all dependencies:
+
+```bash
+# Option 1: Using the root install script
+npm run install:all
+
+# Option 2: Install individually
+npm install              # Root dependencies
+cd frontend && npm install
+cd ../backend && npm install
+```
+
+## 🏃 Running the Application
+
+### Run both frontend and backend:
+
+```bash
+# From root directory
+npm run dev
+```
+
+### Run individually:
+
+```bash
+# Backend only (runs on port 5000)
+npm run dev:backend
+
+# Frontend only (runs on port 3000)
+npm run dev:frontend
+```
+
+## 🔨 Building
+
+```bash
+# Build both
+npm run build
+
+# Build individually
+npm run build:backend
+npm run build:frontend
+```
+
+## 🌐 API Endpoints
+
+### Backend Server (Port 5000)
+
+- `GET /` - Server status
+- `GET /api/health` - Health check
+- `GET /api/movies/search` - Search movies (TMDB API)
+- `GET /api/movies/popular/movies` - Get popular movies
+- `GET /api/movies/popular/series` - Get popular TV series
+
+## 📝 Environment Variables
+
+Create a `.env` file in the backend directory:
+
+```env
+PORT=5000
+TMDB_API_KEY=your_tmdb_api_key_here
+```
+
+## 🛠️ Development
+
+- Frontend runs on: http://localhost:3000
+- Backend runs on: http://localhost:5000
+
+## 📄 License
+
+ISC
