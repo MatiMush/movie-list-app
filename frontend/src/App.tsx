@@ -37,7 +37,6 @@ const App: React.FC = () => {
     const [filteredMovies, setFilteredMovies] = useState<Movie[]>([]);
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [searchInputValue, setSearchInputValue] = useState<string>('');
-    const [selectedGenre, setSelectedGenre] = useState<string>('all');
     const [selectedYear, setSelectedYear] = useState<string>('all');
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string>('');
@@ -93,14 +92,9 @@ const App: React.FC = () => {
         fetchMovies();
     }, [activeCategory, selectedCategoryGenre, searchQuery, isSearchMode, currentPage]);
 
-    // Apply local filters (genre and year) to displayed movies
+    // Apply local filters (year) to displayed movies
     useEffect(() => {
         let filtered = movies;
-
-        // Apply genre filter (local filter on displayed results)
-        if (selectedGenre !== 'all') {
-            filtered = filtered.filter(movie => movie.genre === selectedGenre);
-        }
 
         // Apply year filter
         if (selectedYear !== 'all') {
@@ -108,10 +102,7 @@ const App: React.FC = () => {
         }
 
         setFilteredMovies(filtered);
-    }, [selectedGenre, selectedYear, movies]);
-
-    // Get unique genres from current movies
-    const genres = Array.from(new Set(movies.map(movie => movie.genre)));
+    }, [selectedYear, movies]);
 
     // Get unique years from current movies, with fallback to full range
     const years = getYearsFromMovies(movies);
@@ -148,7 +139,6 @@ const App: React.FC = () => {
         setSearchInputValue('');
         setSearchQuery('');
         setCurrentPage(1);
-        setSelectedGenre('all');
         setSelectedYear('all');
     };
 
@@ -226,20 +216,6 @@ const App: React.FC = () => {
             )}
 
             <div className="filters">
-                <div className="filter-group">
-                    <label htmlFor="genre-filter">Filter by Genre:</label>
-                    <select
-                        id="genre-filter"
-                        value={selectedGenre}
-                        onChange={(e) => setSelectedGenre(e.target.value)}
-                    >
-                        <option value="all">Show All</option>
-                        {genres.map(genre => (
-                            <option key={genre} value={genre}>{genre}</option>
-                        ))}
-                    </select>
-                </div>
-
                 <div className="filter-group">
                     <label htmlFor="year-filter">Filter by Year:</label>
                     <select
