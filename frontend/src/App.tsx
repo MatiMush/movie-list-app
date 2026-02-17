@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import './App.css';
+import { MovieContext } from './context/MovieContext';
+import { getYearsFromMovies } from './utils/filters';
 
 interface Movie {
     id: number;
@@ -23,6 +25,14 @@ type CategoryType = 'popular' | 'top-rated' | 'now-playing' | 'genre';
 const API_BASE_URL = 'http://localhost:5000/api';
 
 const App: React.FC = () => {
+    const movieContext = useContext(MovieContext);
+    
+    if (!movieContext) {
+        throw new Error('App must be used within MovieProvider');
+    }
+    
+    const { genres: availableGenres, loadingGenres } = movieContext;
+    
     const [movies, setMovies] = useState<Movie[]>([]);
     const [filteredMovies, setFilteredMovies] = useState<Movie[]>([]);
     const [searchQuery, setSearchQuery] = useState<string>('');
@@ -35,23 +45,8 @@ const App: React.FC = () => {
     // New state for categories
     const [activeCategory, setActiveCategory] = useState<CategoryType>('popular');
     const [selectedCategoryGenre, setSelectedCategoryGenre] = useState<number | null>(null);
-    const [availableGenres, setAvailableGenres] = useState<Genre[]>([]);
     const [isSearchMode, setIsSearchMode] = useState<boolean>(false);
     const [currentPage, setCurrentPage] = useState<number>(1);
-
-    // Fetch available genres from backend
-    useEffect(() => {
-        const fetchGenres = async () => {
-            try {
-                const response = await axios.get(`${API_BASE_URL}/genres`);
-                setAvailableGenres(response.data);
-            } catch (err) {
-                console.error('Failed to fetch genres:', err);
-            }
-        };
-
-        fetchGenres();
-    }, []);
 
     // Fetch movies based on category or search
     useEffect(() => {
@@ -118,8 +113,8 @@ const App: React.FC = () => {
     // Get unique genres from current movies
     const genres = Array.from(new Set(movies.map(movie => movie.genre)));
 
-    // Get unique years from current movies
-    const years = Array.from(new Set(movies.map(movie => movie.year))).sort((a, b) => b - a);
+    // Get unique years from current movies, with fallback to full range
+    const years = getYearsFromMovies(movies);
 
     // Handle search
     const handleSearch = () => {
