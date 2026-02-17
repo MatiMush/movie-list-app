@@ -1,24 +1,22 @@
 {
-  "name": "movie-list-app-backend",
+  "name": "movie-list-app",
   "version": "1.0.0",
-  "description": "Movie List App Backend",
-  "main": "src/server.ts",
-  "type": "module",
+  "description": "Movie List Application - Monorepo",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
   "scripts": {
-    "dev": "ts-node src/server.ts",
-    "build": "tsc",
-    "start": "node dist/server.js"
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "dev": "npm run dev:backend & npm run dev:frontend",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "build": "npm run build:backend && npm run build:frontend",
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install"
   },
-  "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "dotenv": "^16.0.3"
-  },
-  "devDependencies": {
-    "typescript": "^5.0.2",
-    "ts-node": "^10.9.1",
-    "@types/express": "^4.17.17",
-    "@types/cors": "^2.8.13",
-    "@types/node": "^20.0.0"
-  }
+  "keywords": ["movie", "list", "app", "react", "express"],
+  "author": "",
+  "license": "ISC"
 }
