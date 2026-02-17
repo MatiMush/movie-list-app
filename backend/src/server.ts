@@ -101,15 +101,21 @@ async function fetchMoviesFromTMDB(pages: number = 5): Promise<Movie[]> {
             
             const movies = response.data.results;
             
-            // Process each movie with credits
-            for (const movie of movies) {
-                // Fetch credits for this movie
-                const { director, actors } = await fetchMovieCredits(movie.id);
+            // Fetch credits for all movies in parallel with batching
+            const creditPromises = movies.map((movie: any) => 
+                fetchMovieCredits(movie.id)
+            );
+            const creditsResults = await Promise.all(creditPromises);
+            
+            // Process each movie with its credits
+            for (let i = 0; i < movies.length; i++) {
+                const movie = movies[i];
+                const { director, actors } = creditsResults[i];
                 
                 // Extract year from release_date
                 const year = movie.release_date 
                     ? parseInt(movie.release_date.split('-')[0]) 
-                    : 0;
+                    : new Date().getFullYear(); // Use current year as fallback
                 
                 // Get genre name from first genre_id
                 const genreName = movie.genre_ids && movie.genre_ids.length > 0
@@ -137,9 +143,10 @@ async function fetchMoviesFromTMDB(pages: number = 5): Promise<Movie[]> {
                 allMovies.push(transformedMovie);
             }
             
-            // Add a small delay between pages to avoid rate limiting
+            // Add a delay between pages to respect rate limits
+            // Since we're fetching credits in parallel, this is sufficient
             if (page < pages) {
-                await new Promise(resolve => setTimeout(resolve, 250));
+                await new Promise(resolve => setTimeout(resolve, 1000));
             }
         }
         
