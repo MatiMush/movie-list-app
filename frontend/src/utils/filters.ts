@@ -1,8 +1,8 @@
 /**
- * Generate a list of years from movies' release dates.
+ * Generate a list of years from movies.
  * If no years are available or the list is too small, generates a full range from current year to minYear.
  * 
- * @param moviesArray - Array of movies with release_date property
+ * @param moviesArray - Array of movies with year property
  * @param minYear - Minimum year to include in fallback range (default: 1900)
  * @returns Sorted array of years in descending order
  */
