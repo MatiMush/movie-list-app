@@ -13,6 +13,13 @@ const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
 
+// Validate API key on startup
+if (!TMDB_API_KEY) {
+    console.error('❌ ERROR: TMDB_API_KEY is not set in environment variables');
+    console.error('Please create a .env file with TMDB_API_KEY=your_api_key_here');
+    process.exit(1);
+}
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -175,5 +182,7 @@ app.get('/api/movies', async (req: Request, res: Response) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`🚀 Server is running on port ${PORT}`);
+    console.log(`📡 TMDB API integration enabled`);
+    console.log(`🎬 Movies will be fetched from TMDB on first request`);
 });
