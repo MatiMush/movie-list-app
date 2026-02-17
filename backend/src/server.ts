@@ -1,147 +1,195 @@
 import express from 'express';
 import type { Request, Response } from 'express';
 import cors from 'cors';
+import axios from 'axios';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const TMDB_API_KEY = process.env.TMDB_API_KEY;
+const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
+const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
+
+// Validate API key on startup
+if (!TMDB_API_KEY) {
+    console.error('❌ ERROR: TMDB_API_KEY is not set in environment variables');
+    console.error('Please create a .env file with TMDB_API_KEY=your_api_key_here');
+    process.exit(1);
+}
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// Sample movie data
-const movies = [
-    {
-        id: 1,
-        title: "The Matrix",
-        genre: "Sci-Fi",
-        year: 2020,
-        description: "A computer hacker learns about the true nature of reality and his role in the war against its controllers.",
-        poster: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400&h=600&fit=crop",
-        director: "Lana Wachowski, Lilly Wachowski",
-        actors: ["Keanu Reeves", "Laurence Fishburne", "Carrie-Anne Moss"]
-    },
-    {
-        id: 2,
-        title: "Inception",
-        genre: "Action",
-        year: 2021,
-        description: "A thief who steals corporate secrets through dream-sharing technology is given the inverse task of planting an idea.",
-        poster: "https://images.unsplash.com/photo-1518676590629-3dcbd9c5a5c9?w=400&h=600&fit=crop",
-        director: "Christopher Nolan",
-        actors: ["Leonardo DiCaprio", "Joseph Gordon-Levitt", "Ellen Page"]
-    },
-    {
-        id: 3,
-        title: "The Shawshank Redemption",
-        genre: "Drama",
-        year: 2020,
-        description: "Two imprisoned men bond over years, finding solace and eventual redemption through acts of common decency.",
-        poster: "https://images.unsplash.com/photo-1594908900066-3f47337549d8?w=400&h=600&fit=crop",
-        director: "Frank Darabont",
-        actors: ["Tim Robbins", "Morgan Freeman", "Bob Gunton"]
-    },
-    {
-        id: 4,
-        title: "The Dark Knight",
-        genre: "Action",
-        year: 2022,
-        description: "Batman faces the Joker, a criminal mastermind who wants to plunge Gotham City into anarchy.",
-        poster: "https://images.unsplash.com/photo-1509347528160-9a9e33742cdb?w=400&h=600&fit=crop",
-        director: "Christopher Nolan",
-        actors: ["Christian Bale", "Heath Ledger", "Aaron Eckhart"]
-    },
-    {
-        id: 5,
-        title: "Interstellar",
-        genre: "Sci-Fi",
-        year: 2021,
-        description: "A team of explorers travel through a wormhole in space in an attempt to ensure humanity's survival.",
-        poster: "https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=400&h=600&fit=crop",
-        director: "Christopher Nolan",
-        actors: ["Matthew McConaughey", "Anne Hathaway", "Jessica Chastain"]
-    },
-    {
-        id: 6,
-        title: "The Hangover",
-        genre: "Comedy",
-        year: 2022,
-        description: "Three friends wake up from a bachelor party in Las Vegas with no memory of the previous night.",
-        poster: "https://images.unsplash.com/photo-1514306191717-452ec28c7814?w=400&h=600&fit=crop",
-        director: "Todd Phillips",
-        actors: ["Bradley Cooper", "Ed Helms", "Zach Galifianakis"]
-    },
-    {
-        id: 7,
-        title: "The Conjuring",
-        genre: "Horror",
-        year: 2023,
-        description: "Paranormal investigators work to help a family terrorized by a dark presence in their farmhouse.",
-        poster: "https://images.unsplash.com/photo-1574267432644-f413c4a34152?w=400&h=600&fit=crop",
-        director: "James Wan",
-        actors: ["Patrick Wilson", "Vera Farmiga", "Ron Livingston"]
-    },
-    {
-        id: 8,
-        title: "Forrest Gump",
-        genre: "Drama",
-        year: 2023,
-        description: "The presidencies of Kennedy and Johnson unfold through the perspective of an Alabama man.",
-        poster: "https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=400&h=600&fit=crop",
-        director: "Robert Zemeckis",
-        actors: ["Tom Hanks", "Robin Wright", "Gary Sinise"]
-    },
-    {
-        id: 9,
-        title: "Jurassic World",
-        genre: "Adventure",
-        year: 2024,
-        description: "A new theme park built on the original site of Jurassic Park creates a genetically modified hybrid dinosaur.",
-        poster: "https://images.unsplash.com/photo-1580130732478-e8de37a7d8e3?w=400&h=600&fit=crop",
-        director: "Colin Trevorrow",
-        actors: ["Chris Pratt", "Bryce Dallas Howard", "Vincent D'Onofrio"]
-    },
-    {
-        id: 10,
-        title: "Guardians of the Galaxy",
-        genre: "Adventure",
-        year: 2024,
-        description: "A group of intergalactic criminals must pull together to stop a fanatical warrior.",
-        poster: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400&h=600&fit=crop",
-        director: "James Gunn",
-        actors: ["Chris Pratt", "Zoe Saldana", "Dave Bautista"]
-    },
-    {
-        id: 11,
-        title: "Superbad",
-        genre: "Comedy",
-        year: 2023,
-        description: "Two co-dependent high school seniors are forced to deal with separation anxiety.",
-        poster: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=400&h=600&fit=crop",
-        director: "Greg Mottola",
-        actors: ["Jonah Hill", "Michael Cera", "Christopher Mintz-Plasse"]
-    },
-    {
-        id: 12,
-        title: "A Quiet Place",
-        genre: "Horror",
-        year: 2024,
-        description: "In a post-apocalyptic world, a family is forced to live in silence while hiding from monsters.",
-        poster: "https://images.unsplash.com/photo-1571847140471-1d7766e825ea?w=400&h=600&fit=crop",
-        director: "John Krasinski",
-        actors: ["Emily Blunt", "John Krasinski", "Millicent Simmonds"]
+// TMDB Genre mapping
+const genreMap: { [key: number]: string } = {
+    28: "Action",
+    12: "Adventure",
+    16: "Animation",
+    35: "Comedy",
+    80: "Crime",
+    99: "Documentary",
+    18: "Drama",
+    10751: "Family",
+    14: "Fantasy",
+    36: "History",
+    27: "Horror",
+    10402: "Music",
+    9648: "Mystery",
+    10749: "Romance",
+    878: "Sci-Fi",
+    10770: "TV Movie",
+    53: "Thriller",
+    10752: "War",
+    37: "Western"
+};
+
+// Movie interface
+interface Movie {
+    id: number;
+    title: string;
+    year: number;
+    genre: string;
+    rating: number;
+    poster: string;
+    director: string;
+    actors: string[];
+    description: string;
+}
+
+// Cache for movie data
+let movieCache: Movie[] = [];
+let cacheTimestamp: number = 0;
+const CACHE_DURATION = 1000 * 60 * 60; // 1 hour
+
+// Helper function to fetch movie credits (director and actors)
+async function fetchMovieCredits(movieId: number): Promise<{ director: string; actors: string[] }> {
+    try {
+        const response = await axios.get(
+            `${TMDB_BASE_URL}/movie/${movieId}/credits?api_key=${TMDB_API_KEY}`
+        );
+        
+        const { cast, crew } = response.data;
+        
+        // Get director
+        const directorObj = crew.find((member: any) => member.job === 'Director');
+        const director = directorObj ? directorObj.name : 'Unknown';
+        
+        // Get top 5 actors
+        const actors = cast.slice(0, 5).map((actor: any) => actor.name);
+        
+        return { director, actors };
+    } catch (error) {
+        console.error(`Error fetching credits for movie ${movieId}:`, error);
+        return { director: 'Unknown', actors: [] };
     }
-];
+}
+
+// Function to fetch and transform movies from TMDB
+async function fetchMoviesFromTMDB(pages: number = 5): Promise<Movie[]> {
+    try {
+        const allMovies: Movie[] = [];
+        
+        // Fetch multiple pages to get ~100 movies
+        for (let page = 1; page <= pages; page++) {
+            const response = await axios.get(
+                `${TMDB_BASE_URL}/movie/popular?api_key=${TMDB_API_KEY}&page=${page}`
+            );
+            
+            const movies = response.data.results;
+            
+            // Fetch credits for all movies in parallel with batching
+            const creditPromises = movies.map((movie: any) => 
+                fetchMovieCredits(movie.id)
+            );
+            const creditsResults = await Promise.all(creditPromises);
+            
+            // Process each movie with its credits
+            for (let i = 0; i < movies.length; i++) {
+                const movie = movies[i];
+                const { director, actors } = creditsResults[i];
+                
+                // Extract year from release_date
+                const year = movie.release_date 
+                    ? parseInt(movie.release_date.split('-')[0]) 
+                    : new Date().getFullYear(); // Use current year as fallback
+                
+                // Get genre name from first genre_id
+                const genreName = movie.genre_ids && movie.genre_ids.length > 0
+                    ? genreMap[movie.genre_ids[0]] || 'Unknown'
+                    : 'Unknown';
+                
+                // Build poster URL
+                const poster = movie.poster_path 
+                    ? `${TMDB_IMAGE_BASE_URL}${movie.poster_path}`
+                    : 'https://via.placeholder.com/500x750?text=No+Poster';
+                
+                // Transform to our Movie interface
+                const transformedMovie: Movie = {
+                    id: movie.id,
+                    title: movie.title,
+                    year: year,
+                    genre: genreName,
+                    rating: movie.vote_average,
+                    poster: poster,
+                    director: director,
+                    actors: actors,
+                    description: movie.overview || 'No description available'
+                };
+                
+                allMovies.push(transformedMovie);
+            }
+            
+            // Add a delay between pages to respect rate limits
+            // Since we're fetching credits in parallel, this is sufficient
+            if (page < pages) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        }
+        
+        return allMovies;
+    } catch (error) {
+        console.error('Error fetching movies from TMDB:', error);
+        throw error;
+    }
+}
 
 // Routes
 app.get('/', (req: Request, res: Response) => {
     res.send('Hello World!');
 });
 
-app.get('/api/movies', (req: Request, res: Response) => {
-    res.json(movies);
+app.get('/api/movies', async (req: Request, res: Response) => {
+    try {
+        // Check if cache is valid
+        const now = Date.now();
+        if (movieCache.length > 0 && (now - cacheTimestamp) < CACHE_DURATION) {
+            console.log('Returning cached movies');
+            res.json(movieCache);
+            return;
+        }
+        
+        // Fetch fresh data from TMDB
+        console.log('Fetching movies from TMDB...');
+        const movies = await fetchMoviesFromTMDB(5); // Fetch 5 pages (~100 movies)
+        
+        // Update cache
+        movieCache = movies;
+        cacheTimestamp = now;
+        
+        console.log(`Fetched ${movies.length} movies from TMDB`);
+        res.json(movies);
+    } catch (error) {
+        console.error('Error in /api/movies endpoint:', error);
+        res.status(500).json({ error: 'Failed to fetch movies' });
+    }
 });
 
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`🚀 Server is running on port ${PORT}`);
+    console.log(`📡 TMDB API integration enabled`);
+    console.log(`🎬 Movies will be fetched from TMDB on first request`);
 });
