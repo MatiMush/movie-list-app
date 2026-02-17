@@ -28,7 +28,6 @@ const App: React.FC = () => {
     
     const { genres: availableGenres } = movieContext;
     
-    const [movies, setMovies] = useState<Movie[]>([]);
     const [filteredMovies, setFilteredMovies] = useState<Movie[]>([]);
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [searchInputValue, setSearchInputValue] = useState<string>('');
@@ -87,7 +86,6 @@ const App: React.FC = () => {
                 }
 
                 if (response) {
-                    setMovies(response.data);
                     setFilteredMovies(response.data);
                 }
                 setLoading(false);
@@ -100,8 +98,8 @@ const App: React.FC = () => {
         fetchMovies();
     }, [activeCategory, selectedCategoryGenre, searchQuery, isSearchMode, currentPage, selectedGenreFilter, selectedYearFilter]);
 
-    // Get unique years from current movies, with fallback to full range
-    const years = getYearsFromMovies(movies);
+    // Get unique years - always returns full range (1900-current year)
+    const years = getYearsFromMovies([]);
 
     // Handle search
     const handleSearch = () => {

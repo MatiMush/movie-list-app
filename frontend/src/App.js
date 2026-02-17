@@ -11,7 +11,6 @@ const App = () => {
         throw new Error('App must be used within MovieProvider');
     }
     const { genres: availableGenres } = movieContext;
-    const [movies, setMovies] = useState([]);
     const [filteredMovies, setFilteredMovies] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchInputValue, setSearchInputValue] = useState('');
@@ -70,7 +69,6 @@ const App = () => {
                     });
                 }
                 if (response) {
-                    setMovies(response.data);
                     setFilteredMovies(response.data);
                 }
                 setLoading(false);
@@ -82,8 +80,8 @@ const App = () => {
         };
         fetchMovies();
     }, [activeCategory, selectedCategoryGenre, searchQuery, isSearchMode, currentPage, selectedGenreFilter, selectedYearFilter]);
-    // Get unique years from current movies, with fallback to full range
-    const years = getYearsFromMovies(movies);
+    // Get unique years - always returns full range (1900-current year)
+    const years = getYearsFromMovies([]);
     // Handle search
     const handleSearch = () => {
         if (searchInputValue.trim() !== '') {
