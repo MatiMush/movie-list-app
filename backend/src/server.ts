@@ -24,28 +24,38 @@ if (!TMDB_API_KEY) {
 app.use(cors());
 app.use(express.json());
 
-// TMDB Genre mapping
-const genreMap: { [key: number]: string } = {
-    28: "Action",
-    12: "Adventure",
-    16: "Animation",
-    35: "Comedy",
-    80: "Crime",
-    99: "Documentary",
-    18: "Drama",
-    10751: "Family",
-    14: "Fantasy",
-    36: "History",
-    27: "Horror",
-    10402: "Music",
-    9648: "Mystery",
-    10749: "Romance",
-    878: "Sci-Fi",
-    10770: "TV Movie",
-    53: "Thriller",
-    10752: "War",
-    37: "Western"
-};
+// Cache for genres from TMDB API
+let genreCache: { [key: number]: string } = {};
+let genreCacheTimestamp: number = 0;
+
+// Function to fetch and cache genres from TMDB
+async function fetchGenreMap(): Promise<{ [key: number]: string }> {
+    const now = Date.now();
+    // Check if cache is valid (1 hour)
+    if (Object.keys(genreCache).length > 0 && (now - genreCacheTimestamp) < CACHE_DURATION) {
+        return genreCache;
+    }
+    
+    try {
+        const response = await axios.get(
+            `${TMDB_BASE_URL}/genre/movie/list?api_key=${TMDB_API_KEY}`
+        );
+        const genres = response.data.genres;
+        
+        // Build genre map
+        const map: { [key: number]: string } = {};
+        for (const genre of genres) {
+            map[genre.id] = genre.name;
+        }
+        
+        genreCache = map;
+        genreCacheTimestamp = now;
+        return map;
+    } catch (error) {
+        console.error('Error fetching genres from TMDB:', error);
+        return {};
+    }
+}
 
 // Movie interface
 interface Movie {
@@ -92,6 +102,9 @@ async function fetchMovieCredits(movieId: number): Promise<{ director: string; a
 async function fetchMoviesFromEndpoint(endpoint: string, pages: number = 1): Promise<Movie[]> {
     try {
         const allMovies: Movie[] = [];
+        
+        // Fetch genre map once before processing movies
+        const genreMap = await fetchGenreMap();
         
         for (let page = 1; page <= pages; page++) {
             const separator = endpoint.includes('?') ? '&' : '?';
