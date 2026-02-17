@@ -88,40 +88,6 @@ async function fetchMovieCredits(movieId: number): Promise<{ director: string; a
     }
 }
 
-// Helper function to transform a single movie from TMDB format to our Movie interface
-async function transformTMDBMovie(movie: any): Promise<Movie> {
-    // Fetch credits for the movie
-    const { director, actors } = await fetchMovieCredits(movie.id);
-    
-    // Extract year from release_date
-    const year = movie.release_date 
-        ? parseInt(movie.release_date.split('-')[0]) 
-        : new Date().getFullYear();
-    
-    // Get genre name from first genre_id
-    const genreName = movie.genre_ids && movie.genre_ids.length > 0
-        ? genreMap[movie.genre_ids[0]] || 'Unknown'
-        : 'Unknown';
-    
-    // Build poster URL
-    const poster = movie.poster_path 
-        ? `${TMDB_IMAGE_BASE_URL}${movie.poster_path}`
-        : 'https://via.placeholder.com/500x750?text=No+Poster';
-    
-    // Transform to our Movie interface
-    return {
-        id: movie.id,
-        title: movie.title,
-        year: year,
-        genre: genreName,
-        rating: movie.vote_average,
-        poster: poster,
-        director: director,
-        actors: actors,
-        description: movie.overview || 'No description available'
-    };
-}
-
 // Function to fetch and transform movies from TMDB endpoint
 async function fetchMoviesFromEndpoint(endpoint: string, pages: number = 1): Promise<Movie[]> {
     try {

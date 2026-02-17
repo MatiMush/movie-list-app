@@ -289,7 +289,7 @@ const App: React.FC = () => {
                 </div>
             )}
 
-            {!loading && filteredMovies.length > 0 && currentPage === 1 && (
+            {!loading && filteredMovies.length > 0 && (
                 <div className="load-more-container">
                     <button 
                         className="load-more-button" 
