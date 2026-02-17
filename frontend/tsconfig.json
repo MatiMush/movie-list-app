@@ -12,7 +12,9 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "moduleResolution": "bundler",
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "jsx": "react-jsx",
+    "isolatedModules": true
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
