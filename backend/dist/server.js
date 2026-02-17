@@ -1,14 +1,12 @@
-import express from 'express';
-import type { Request, Response } from 'express';
-import cors from 'cors';
-
-const app = express();
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const cors_1 = require("cors");
+const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5000;
-
 // Middleware
-app.use(cors());
-app.use(express.json());
-
+app.use((0, cors_1.default)());
+app.use(express_1.default.json());
 // Sample movie data
 const movies = [
     {
@@ -108,16 +106,13 @@ const movies = [
         poster: "https://images.unsplash.com/photo-1571847140471-1d7766e825ea?w=400&h=600&fit=crop"
     }
 ];
-
 // Routes
-app.get('/', (req: Request, res: Response) => {
+app.get('/', (req, res) => {
     res.send('Hello World!');
 });
-
-app.get('/api/movies', (req: Request, res: Response) => {
+app.get('/api/movies', (req, res) => {
     res.json(movies);
 });
-
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
