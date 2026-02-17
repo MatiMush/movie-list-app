@@ -15,11 +15,6 @@ interface Movie {
     actors: string[];
 }
 
-interface Genre {
-    id: number;
-    name: string;
-}
-
 type CategoryType = 'popular' | 'top-rated' | 'now-playing' | 'genre';
 
 const API_BASE_URL = 'http://localhost:5000/api';
@@ -31,7 +26,7 @@ const App: React.FC = () => {
         throw new Error('App must be used within MovieProvider');
     }
     
-    const { genres: availableGenres, loadingGenres } = movieContext;
+    const { genres: availableGenres } = movieContext;
     
     const [movies, setMovies] = useState<Movie[]>([]);
     const [filteredMovies, setFilteredMovies] = useState<Movie[]>([]);
