@@ -9,11 +9,14 @@ interface Movie {
     year: number;
     description: string;
     poster: string;
+    director: string;
+    actors: string[];
 }
 
 const App: React.FC = () => {
     const [movies, setMovies] = useState<Movie[]>([]);
     const [filteredMovies, setFilteredMovies] = useState<Movie[]>([]);
+    const [searchQuery, setSearchQuery] = useState<string>('');
     const [selectedGenre, setSelectedGenre] = useState<string>('all');
     const [selectedYear, setSelectedYear] = useState<string>('all');
     const [loading, setLoading] = useState<boolean>(true);
@@ -37,20 +40,35 @@ const App: React.FC = () => {
         fetchMovies();
     }, []);
 
-    // Filter movies when genre or year changes
+    // Filter movies when genre, year, or search query changes
     useEffect(() => {
         let filtered = movies;
 
+        // Apply search filter
+        if (searchQuery.trim() !== '') {
+            const query = searchQuery.toLowerCase();
+            filtered = filtered.filter(movie => {
+                const titleMatch = movie.title.toLowerCase().includes(query);
+                const directorMatch = movie.director.toLowerCase().includes(query);
+                const actorsMatch = movie.actors.some(actor => 
+                    actor.toLowerCase().includes(query)
+                );
+                return titleMatch || directorMatch || actorsMatch;
+            });
+        }
+
+        // Apply genre filter
         if (selectedGenre !== 'all') {
             filtered = filtered.filter(movie => movie.genre === selectedGenre);
         }
 
+        // Apply year filter
         if (selectedYear !== 'all') {
             filtered = filtered.filter(movie => movie.year === parseInt(selectedYear));
         }
 
         setFilteredMovies(filtered);
-    }, [selectedGenre, selectedYear, movies]);
+    }, [searchQuery, selectedGenre, selectedYear, movies]);
 
     // Get unique genres from movies
     const genres = Array.from(new Set(movies.map(movie => movie.genre)));
@@ -63,6 +81,16 @@ const App: React.FC = () => {
             <header className="app-header">
                 <h1>🎬 Movie List App</h1>
             </header>
+
+            <div className="search-container">
+                <input
+                    type="text"
+                    className="search-input"
+                    placeholder="Search by title, director, or actor..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                />
+            </div>
 
             <div className="filters">
                 <div className="filter-group">
