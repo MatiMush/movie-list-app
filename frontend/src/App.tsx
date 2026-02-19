@@ -49,7 +49,7 @@ const App: React.FC = () => {
         setSelectedYearFilter(null);
     };
     
-    const [filteredMovies, setFilteredMovies] = useState<Movie[]>([]);
+    const [filteredMovies, setFilteredMovies] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [searchInputValue, setSearchInputValue] = useState<string>('');
     const [selectedYear, setSelectedYear] = useState<string>('all');
@@ -102,7 +102,7 @@ const App: React.FC = () => {
                 }
 
                 if (response) {
-                    setFilteredMovies(response.data);
+                    setFilteredMovies(response.data.results || []);
                 }
                 setLoading(false);
             } catch (err) {
