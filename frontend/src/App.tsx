@@ -15,7 +15,7 @@ interface Movie {
     actors: string[];
 }
 
-type CategoryType = 'popular' | 'top-rated' | 'now-playing' | 'genre';
+type CategoryType = 'popular' | 'top-rated' | 'now-playing';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
@@ -37,7 +37,6 @@ const App: React.FC = () => {
     
     // New state for categories
     const [activeCategory, setActiveCategory] = useState<CategoryType>('popular');
-    const [selectedCategoryGenre, setSelectedCategoryGenre] = useState<number | null>(null);
     const [isSearchMode, setIsSearchMode] = useState<boolean>(false);
     const [currentPage, setCurrentPage] = useState<number>(1);
     
@@ -79,10 +78,6 @@ const App: React.FC = () => {
                     response = await axios.get(`${API_BASE_URL}/movies/now-playing`, {
                         params: { page: currentPage }
                     });
-                } else if (activeCategory === 'genre' && selectedCategoryGenre) {
-                    response = await axios.get(`${API_BASE_URL}/movies/genre/${selectedCategoryGenre}`, {
-                        params: { page: currentPage }
-                    });
                 }
 
                 if (response) {
@@ -96,7 +91,7 @@ const App: React.FC = () => {
         };
 
         fetchMovies();
-    }, [activeCategory, selectedCategoryGenre, searchQuery, isSearchMode, currentPage, selectedGenreFilter, selectedYearFilter]);
+    }, [activeCategory, searchQuery, isSearchMode, currentPage, selectedGenreFilter, selectedYearFilter]);
 
     // Get unique years - always returns full range (1900-current year)
     const years = getYearsFromMovies([]);
@@ -126,9 +121,8 @@ const App: React.FC = () => {
     };
 
     // Handle category change
-    const handleCategoryChange = (category: CategoryType, genreId?: number) => {
+    const handleCategoryChange = (category: CategoryType) => {
         setActiveCategory(category);
-        setSelectedCategoryGenre(genreId || null);
         setIsSearchMode(false);
         setSearchInputValue('');
         setSearchQuery('');
@@ -200,27 +194,6 @@ const App: React.FC = () => {
                         >
                             🎬 Now Playing
                         </button>
-                        <div className="genre-dropdown-container">
-                            <label htmlFor="category-genre">🎭 Genres:</label>
-                            <select
-                                id="category-genre"
-                                className="genre-dropdown"
-                                value={selectedCategoryGenre || ''}
-                                onChange={(e) => {
-                                    const genreId = parseInt(e.target.value);
-                                    if (genreId) {
-                                        handleCategoryChange('genre', genreId);
-                                    }
-                                }}
-                            >
-                                <option value="">Select Genre</option>
-                                {availableGenres.map(genre => (
-                                    <option key={genre.id} value={genre.id}>
-                                        {genre.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
                     </div>
                 </div>
             )}
