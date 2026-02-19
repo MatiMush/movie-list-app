@@ -1,4 +1,4 @@
-import connectDB from './config/database.js';
-import authRoutes from './routes/authRoutes.js';
+import connectDB from './config/database';
+import authRoutes from './routes/authRoutes';
 
 // Other existing code...
