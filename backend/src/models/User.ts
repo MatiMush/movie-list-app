@@ -2,21 +2,22 @@ import mongoose, { Schema, Document } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 export interface IUser extends Document {
-  username: string;
+  name: string;
   email: string;
   password: string;
   createdAt: Date;
+  comparePassword(enteredPassword: string): Promise<boolean>;
   matchPassword(enteredPassword: string): Promise<boolean>;
 }
 
 const userSchema = new Schema<IUser>(
   {
-    username: {
+    name: {
       type: String,
-      required: [true, 'Please provide a username'],
-      unique: true,
+      required: [true, 'Please provide a name'],
       trim: true,
-      minlength: 3,
+      minlength: 2,
+      maxlength: 50,
     },
     email: {
       type: String,
@@ -48,7 +49,12 @@ userSchema.pre('save', async function (next) {
   this.password = await bcrypt.hash(this.password, salt);
 });
 
-// Match user password
+// Compare user password
+userSchema.methods.comparePassword = async function (enteredPassword: string) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
+
+// Alias for backwards compatibility
 userSchema.methods.matchPassword = async function (enteredPassword: string) {
   return await bcrypt.compare(enteredPassword, this.password);
 };

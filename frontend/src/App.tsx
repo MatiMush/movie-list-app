@@ -2,7 +2,10 @@ import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import './App.css';
 import { MovieContext } from './context/MovieContext';
+import { useAuth } from './context/AuthContext';
 import { getYearsFromMovies } from './utils/filters';
+import Login from './components/Login';
+import Register from './components/Register';
 
 interface Movie {
     id: number;
@@ -27,6 +30,24 @@ const App: React.FC = () => {
     }
     
     const { genres: availableGenres } = movieContext;
+    const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth();
+    
+    const [showAuth, setShowAuth] = useState(false);
+    const [authView, setAuthView] = useState<'login' | 'register'>('login');
+
+    const handleShowLogin = () => { setAuthView('login'); setShowAuth(true); };
+    const handleShowRegister = () => { setAuthView('register'); setShowAuth(true); };
+    const handleAuthSuccess = () => { setShowAuth(false); };
+    const handleLogout = () => {
+        logout();
+        setFilteredMovies([]);
+        setSearchInputValue('');
+        setSearchQuery('');
+        setIsSearchMode(false);
+        setCurrentPage(1);
+        setSelectedGenreFilter(null);
+        setSelectedYearFilter(null);
+    };
     
     const [filteredMovies, setFilteredMovies] = useState<Movie[]>([]);
     const [searchQuery, setSearchQuery] = useState<string>('');
@@ -148,8 +169,29 @@ const App: React.FC = () => {
 
     return (
         <div className="app">
+            {showAuth && authView === 'login' && (
+                <Login onSuccess={handleAuthSuccess} onSwitchToRegister={handleShowRegister} />
+            )}
+            {showAuth && authView === 'register' && (
+                <Register onSuccess={handleAuthSuccess} onSwitchToLogin={handleShowLogin} />
+            )}
+            {!showAuth && (
+            <>
             <header className="app-header">
                 <h1>🎬 Movie List App</h1>
+                <div className="user-section">
+                    {authLoading ? null : isAuthenticated && user ? (
+                        <>
+                            <span className="welcome-message">Welcome, {user.name}! 👋</span>
+                            <button className="logout-button" onClick={handleLogout}>Logout</button>
+                        </>
+                    ) : (
+                        <>
+                            <button className="login-button" onClick={handleShowLogin}>Login</button>
+                            <button className="register-button" onClick={handleShowRegister}>Register</button>
+                        </>
+                    )}
+                </div>
             </header>
 
             <div className="search-container">
@@ -274,6 +316,8 @@ const App: React.FC = () => {
                         Load More
                     </button>
                 </div>
+            )}
+            </>
             )}
         </div>
     );

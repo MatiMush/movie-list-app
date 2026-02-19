@@ -3,11 +3,14 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 import { MovieProvider } from './context/MovieContext';
+import { AuthProvider } from './context/AuthContext';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <MovieProvider>
-      <App />
-    </MovieProvider>
+    <AuthProvider>
+      <MovieProvider>
+        <App />
+      </MovieProvider>
+    </AuthProvider>
   </React.StrictMode>,
 );
