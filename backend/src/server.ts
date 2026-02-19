@@ -290,6 +290,35 @@ app.get('/api/genres', async (req: Request, res: Response) => {
     }
 });
 
+// Discover movies with filters (genre and/or year) endpoint
+app.get('/api/movies/discover', async (req: Request, res: Response) => {
+    try {
+        const genre = req.query.genre as string;
+        const year = req.query.year as string;
+        const page = parseInt(req.query.page as string) || 1;
+        
+        // Build query parameters for TMDB API
+        let endpoint = '/discover/movie?sort_by=popularity.desc';
+        
+        if (genre) {
+            endpoint += `&with_genres=${genre}`;
+        }
+        
+        if (year) {
+            endpoint += `&primary_release_year=${year}`;
+        }
+        
+        console.log(`Discovering movies with filters - genre: ${genre || 'all'}, year: ${year || 'all'}, page: ${page}`);
+        const movies = await fetchMoviesFromEndpoint(endpoint, page);
+        
+        console.log(`Found ${movies.length} movies with applied filters`);
+        res.json(movies);
+    } catch (error) {
+        console.error('Error in /api/movies/discover endpoint:', error);
+        res.status(500).json({ error: 'Failed to discover movies' });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`🚀 Server is running on port ${PORT}`);
     console.log(`📡 TMDB API integration enabled`);
