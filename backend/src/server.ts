@@ -3,6 +3,8 @@ import type { Request, Response } from 'express';
 import cors from 'cors';
 import axios from 'axios';
 import dotenv from 'dotenv';
+import connectDB from './config/database';
+import authRoutes from './routes/authRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -23,6 +25,12 @@ if (!TMDB_API_KEY) {
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Connect to MongoDB
+connectDB();
+
+// Auth routes
+app.use('/api/auth', authRoutes);
 
 // Cache for genres from TMDB API
 let genreCache: { [key: number]: string } = {};

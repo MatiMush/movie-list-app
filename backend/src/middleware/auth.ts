@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-export const protect = (req: Request, res: Response, next: NextFunction) => {
-  let token;
+export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
+  let token: string | undefined;
 
   if (
     req.headers.authorization &&
@@ -26,7 +26,10 @@ export const protect = (req: Request, res: Response, next: NextFunction) => {
     next();
   } catch (error) {
     return res
-      .status(401)
-      .json({ message: 'Not authorized to access this route' });
+      .status(403)
+      .json({ message: 'Invalid token' });
   }
 };
+
+// Alias for backwards compatibility
+export const protect = authenticateToken;

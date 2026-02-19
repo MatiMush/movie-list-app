@@ -1,48 +1,107 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import '../styles/Auth.css';
-import { AuthContext } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 
-const Register: React.FC = () => {
+interface RegisterProps {
+    onSuccess: () => void;
+    onSwitchToLogin: () => void;
+}
+
+const Register: React.FC<RegisterProps> = ({ onSuccess, onSwitchToLogin }) => {
+    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
-    const { register } = useContext(AuthContext)!;
+    const [isLoading, setIsLoading] = useState(false);
+    const { register } = useAuth();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (password !== confirmPassword) {
-            setError('Las contraseñas no coinciden');
+        setError('');
+
+        if (name.trim().length < 2) {
+            setError('Name must be at least 2 characters');
             return;
         }
+        if (password.length < 6) {
+            setError('Password must be at least 6 characters');
+            return;
+        }
+        if (password !== confirmPassword) {
+            setError('Passwords do not match');
+            return;
+        }
+
+        setIsLoading(true);
         try {
-            await register(email, password);
+            await register(name, email, password);
+            onSuccess();
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Error al registrarse');
+            setError(err.response?.data?.message || 'Registration failed. Please try again.');
+        } finally {
+            setIsLoading(false);
         }
     };
 
     return (
         <div className="auth-container">
             <div className="auth-card">
-                <h1>🎬 Crear Cuenta</h1>
+                <h1>🎬 Create Account</h1>
                 {error && <p className="error">{error}</p>}
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
+                        <label>Name:</label>
+                        <input
+                            type="text"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            required
+                            placeholder="Your name"
+                            minLength={2}
+                            maxLength={50}
+                        />
+                    </div>
+                    <div className="form-group">
                         <label>Email:</label>
-                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                        <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                            placeholder="your@email.com"
+                        />
                     </div>
                     <div className="form-group">
-                        <label>Contraseña:</label>
-                        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                        <label>Password:</label>
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                            placeholder="Min 6 characters"
+                            minLength={6}
+                        />
                     </div>
                     <div className="form-group">
-                        <label>Confirmar Contraseña:</label>
-                        <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+                        <label>Confirm Password:</label>
+                        <input
+                            type="password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            required
+                            placeholder="Repeat your password"
+                        />
                     </div>
-                    <button type="submit">Registrarse</button>
+                    <button type="submit" disabled={isLoading}>
+                        {isLoading ? 'Creating account...' : 'Register'}
+                    </button>
                 </form>
-                <p>¿Ya tienes cuenta? <a href="/login">Inicia sesión aquí</a></p>
+                <p>Already have an account?{' '}
+                    <a href="#" onClick={(e) => { e.preventDefault(); onSwitchToLogin(); }}>
+                        Sign in here
+                    </a>
+                </p>
             </div>
         </div>
     );

@@ -17,18 +17,80 @@ body {
 }
 
 .app-header {
-    text-align: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 30px;
-    padding: 20px;
+    padding: 20px 30px;
     background: rgba(255, 255, 255, 0.95);
     border-radius: 15px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    flex-wrap: wrap;
+    gap: 15px;
 }
 
 .app-header h1 {
     color: #333;
     font-size: 2.5rem;
     font-weight: bold;
+}
+
+.user-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.welcome-message {
+    color: #555;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.login-button,
+.register-button,
+.logout-button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.login-button {
+    background: transparent;
+    border: 2px solid #667eea;
+    color: #667eea;
+}
+
+.login-button:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.register-button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.register-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.logout-button {
+    background: #ff6b6b;
+    color: white;
+}
+
+.logout-button:hover {
+    background: #ff5252;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
 }
 
 .search-container {
@@ -338,8 +400,17 @@ body {
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    .app-header {
+        flex-direction: column;
+        text-align: center;
+    }
+
     .app-header h1 {
         font-size: 2rem;
+    }
+
+    .user-section {
+        justify-content: center;
     }
 
     .category-tabs {
