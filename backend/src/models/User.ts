@@ -5,6 +5,7 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
+  friends: mongoose.Types.ObjectId[];
   createdAt: Date;
   comparePassword(enteredPassword: string): Promise<boolean>;
   matchPassword(enteredPassword: string): Promise<boolean>;
@@ -35,6 +36,7 @@ const userSchema = new Schema<IUser>(
       minlength: 6,
       select: false,
     },
+    friends: [{ type: Schema.Types.ObjectId, ref: 'User', default: [] }],
   },
   { timestamps: true }
 );

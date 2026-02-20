@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import List from '../models/List';
+import User from '../models/User';
 
 const DEFAULT_LISTS = ['Favoritos', 'Interés'];
 
@@ -7,7 +8,7 @@ const ensureDefaultLists = async (userId: string) => {
   for (const listName of DEFAULT_LISTS) {
     const exists = await List.findOne({ userId, name: listName });
     if (!exists) {
-      await List.create({ userId, name: listName, items: [] });
+      await List.create({ userId, name: listName, items: [], sharedWith: [] });
     }
   }
 };
@@ -30,6 +31,7 @@ export const createList = async (req: Request, res: Response) => {
       name: name.trim(),
       userId,
       items: [],
+      sharedWith: [],
     });
 
     await list.save();
@@ -207,6 +209,61 @@ export const deleteList = async (req: Request, res: Response) => {
     res.status(200).json({
       message: 'List deleted successfully',
     });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+export const shareListWithFriend = async (req: Request, res: Response) => {
+  try {
+    const { listId } = req.params;
+    const { friendId } = req.body;
+    const userId = (req as any).userId;
+
+    if (!friendId) {
+      return res.status(400).json({ message: 'friendId is required' });
+    }
+
+    const list = await List.findById(listId);
+    if (!list) {
+      return res.status(404).json({ message: 'List not found' });
+    }
+
+    if (list.userId.toString() !== userId) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    const me = await User.findById(userId);
+    if (!me) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isFriend = me.friends.some((id: any) => id.toString() === String(friendId));
+    if (!isFriend) {
+      return res.status(400).json({ message: 'You can only share lists with your friends' });
+    }
+
+    const alreadyShared = list.sharedWith.some((id: any) => id.toString() === String(friendId));
+    if (!alreadyShared) {
+      list.sharedWith.push(friendId);
+      await list.save();
+    }
+
+    res.status(200).json({ message: 'List shared successfully', list });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+export const getListsSharedWithMe = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId;
+
+    const lists = await List.find({ sharedWith: userId })
+      .populate('userId', 'name email')
+      .sort({ updatedAt: -1 });
+
+    res.status(200).json({ lists });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }

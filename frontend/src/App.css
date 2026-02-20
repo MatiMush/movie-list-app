@@ -413,6 +413,45 @@ body {
     margin: 8px 0 16px;
 }
 
+.friends-panel {
+    margin-bottom: 16px;
+    padding: 12px;
+    border: 1px solid #ececec;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.friend-add-row,
+.share-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.friend-add-row input,
+.share-row select {
+    flex: 1;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    padding: 8px 10px;
+}
+
+.friend-add-row button,
+.share-row button {
+    border: none;
+    border-radius: 8px;
+    background: #667eea;
+    color: #fff;
+    padding: 8px 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.friends-list-inline {
+    margin-top: 8px;
+    color: #555;
+}
+
 .user-lists-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -440,6 +479,20 @@ body {
     gap: 10px;
 }
 
+.saved-item-main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.saved-item-cover {
+    width: 42px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #e9e9e9;
+}
+
 .mini-remove-button {
     border: none;
     border-radius: 8px;
@@ -453,6 +506,10 @@ body {
 .empty-list {
     margin-top: 10px;
     color: #888;
+}
+
+.shared-lists-title {
+    margin-top: 18px;
 }
 
 .loading {
@@ -538,7 +595,9 @@ body {
     }
 
     .quick-list-buttons,
-    .custom-list-row {
+    .custom-list-row,
+    .friend-add-row,
+    .share-row {
         flex-direction: column;
     }
 

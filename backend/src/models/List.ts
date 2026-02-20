@@ -12,6 +12,7 @@ interface IListItem {
 
 export interface IList extends Document {
     userId: Types.ObjectId;
+    sharedWith: Types.ObjectId[];
     name: string;
     items: IListItem[];
     createdAt: Date;
@@ -45,6 +46,10 @@ const ListSchema = new Schema<IList>(
             trim: true,
             minlength: 1,
             maxlength: 80,
+        },
+        sharedWith: {
+            type: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+            default: [],
         },
         items: {
             type: [ListItemSchema],

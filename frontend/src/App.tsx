@@ -29,6 +29,13 @@ interface UserList {
     _id: string;
     name: string;
     items: ListItem[];
+    userId?: { _id: string; name: string; email: string } | string;
+}
+
+interface Friend {
+    _id: string;
+    name: string;
+    email: string;
 }
 
 type CategoryType = 'popular' | 'top-rated' | 'now-playing';
@@ -61,6 +68,10 @@ const App: React.FC = () => {
         setCurrentPage(1);
         setSelectedGenreFilter(null);
         setSelectedYearFilter(null);
+        setFriends([]);
+        setSharedLists([]);
+        setFriendEmail('');
+        setSelectedShareFriendByList({});
     };
     
     const [filteredMovies, setFilteredMovies] = useState<Movie[]>([]);
@@ -84,6 +95,10 @@ const App: React.FC = () => {
     const [listActionMessage, setListActionMessage] = useState<string>('');
     const [newListNameByMovie, setNewListNameByMovie] = useState<Record<number, string>>({});
     const [selectedCustomListByMovie, setSelectedCustomListByMovie] = useState<Record<number, string>>({});
+    const [friends, setFriends] = useState<Friend[]>([]);
+    const [friendEmail, setFriendEmail] = useState('');
+    const [selectedShareFriendByList, setSelectedShareFriendByList] = useState<Record<string, string>>({});
+    const [sharedLists, setSharedLists] = useState<UserList[]>([]);
 
     const getMovieYear = (movie: any): string => {
         return movie.year || movie.release_date?.split('-')[0] || '';
@@ -126,6 +141,67 @@ const App: React.FC = () => {
             setListActionMessage('No se pudieron cargar tus listas.');
         } finally {
             setListsLoading(false);
+        }
+    };
+
+    const fetchSharedLists = async () => {
+        if (!isAuthenticated) {
+            return;
+        }
+
+        try {
+            const response = await axios.get(`${API_BASE_URL}/lists/shared/with-me`);
+            setSharedLists(response.data.lists || []);
+        } catch (err) {
+            setListActionMessage('No se pudieron cargar listas compartidas.');
+        }
+    };
+
+    const fetchFriends = async () => {
+        if (!isAuthenticated) {
+            return;
+        }
+
+        try {
+            const response = await axios.get(`${API_BASE_URL}/auth/friends`);
+            setFriends(response.data.friends || []);
+        } catch (err) {
+            setListActionMessage('No se pudieron cargar tus amigos.');
+        }
+    };
+
+    const handleAddFriend = async () => {
+        const email = friendEmail.trim().toLowerCase();
+        if (!email) {
+            setListActionMessage('Escribe un email para agregar un amigo.');
+            return;
+        }
+
+        try {
+            setListActionMessage('');
+            const response = await axios.post(`${API_BASE_URL}/auth/friends/add`, { email });
+            setFriends(response.data.friends || []);
+            setFriendEmail('');
+            setListActionMessage('Amigo agregado correctamente.');
+        } catch (err: any) {
+            setListActionMessage(err.response?.data?.message || 'No se pudo agregar al amigo.');
+        }
+    };
+
+    const handleShareList = async (listId: string) => {
+        const friendId = selectedShareFriendByList[listId];
+
+        if (!friendId) {
+            setListActionMessage('Selecciona un amigo para compartir la lista.');
+            return;
+        }
+
+        try {
+            await axios.post(`${API_BASE_URL}/lists/${listId}/share`, { friendId });
+            setListActionMessage('Lista compartida correctamente.');
+            await fetchSharedLists();
+        } catch (err: any) {
+            setListActionMessage(err.response?.data?.message || 'No se pudo compartir la lista.');
         }
     };
 
@@ -223,8 +299,12 @@ const App: React.FC = () => {
     useEffect(() => {
         if (isAuthenticated) {
             fetchUserLists();
+            fetchFriends();
+            fetchSharedLists();
         } else {
             setUserLists([]);
+            setFriends([]);
+            setSharedLists([]);
             setCurrentView('browse');
         }
     }, [isAuthenticated]);
@@ -367,6 +447,21 @@ const App: React.FC = () => {
                     <h2>👤 Mi Página</h2>
                     <p className="user-page-subtitle">Tus listas guardadas de películas y series.</p>
                     {listActionMessage && <div className="results-info">{listActionMessage}</div>}
+                    <div className="friends-panel">
+                        <h3>👥 Amigos</h3>
+                        <div className="friend-add-row">
+                            <input
+                                type="email"
+                                placeholder="Email del amigo"
+                                value={friendEmail}
+                                onChange={(e) => setFriendEmail(e.target.value)}
+                            />
+                            <button onClick={handleAddFriend}>Agregar amigo</button>
+                        </div>
+                        <div className="friends-list-inline">
+                            {friends.length === 0 ? 'Sin amigos todavía.' : friends.map(friend => friend.name).join(', ')}
+                        </div>
+                    </div>
                     {listsLoading ? (
                         <div className="loading">Cargando listas...</div>
                     ) : userLists.length === 0 ? (
@@ -377,13 +472,28 @@ const App: React.FC = () => {
                                 <div key={list._id} className="user-list-card">
                                     <h3>{list.name}</h3>
                                     <p>{list.items.length} elemento{list.items.length !== 1 ? 's' : ''}</p>
+                                    <div className="share-row">
+                                        <select
+                                            value={selectedShareFriendByList[list._id] || ''}
+                                            onChange={(e) => setSelectedShareFriendByList(prev => ({ ...prev, [list._id]: e.target.value }))}
+                                        >
+                                            <option value="">Compartir con amigo...</option>
+                                            {friends.map(friend => (
+                                                <option key={friend._id} value={friend._id}>{friend.name}</option>
+                                            ))}
+                                        </select>
+                                        <button onClick={() => handleShareList(list._id)}>Compartir</button>
+                                    </div>
                                     {list.items.length === 0 ? (
                                         <div className="empty-list">Lista vacía</div>
                                     ) : (
                                         <div className="saved-items">
                                             {list.items.map(item => (
                                                 <div key={`${list._id}-${item.tmdbId}`} className="saved-item-row">
-                                                    <span>{item.title} {item.year ? `(${item.year})` : ''}</span>
+                                                    <div className="saved-item-main">
+                                                        {item.poster ? <img src={item.poster} alt={item.title} className="saved-item-cover" /> : null}
+                                                        <span>{item.title} {item.year ? `(${item.year})` : ''}</span>
+                                                    </div>
                                                     <button
                                                         className="mini-remove-button"
                                                         onClick={() => handleRemoveFromList(list._id, item.tmdbId)}
@@ -394,6 +504,30 @@ const App: React.FC = () => {
                                             ))}
                                         </div>
                                     )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    <h3 className="shared-lists-title">📨 Listas compartidas conmigo</h3>
+                    {sharedLists.length === 0 ? (
+                        <div className="empty-list">Todavía no tienes listas compartidas.</div>
+                    ) : (
+                        <div className="user-lists-grid">
+                            {sharedLists.map(list => (
+                                <div key={`shared-${list._id}`} className="user-list-card">
+                                    <h3>{list.name}</h3>
+                                    <p>Compartida por {(typeof list.userId === 'object' && list.userId?.name) ? list.userId.name : 'otro usuario'}</p>
+                                    <div className="saved-items">
+                                        {list.items.map(item => (
+                                            <div key={`shared-${list._id}-${item.tmdbId}`} className="saved-item-row">
+                                                <div className="saved-item-main">
+                                                    {item.poster ? <img src={item.poster} alt={item.title} className="saved-item-cover" /> : null}
+                                                    <span>{item.title} {item.year ? `(${item.year})` : ''}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             ))}
                         </div>
