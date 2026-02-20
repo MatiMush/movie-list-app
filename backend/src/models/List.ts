@@ -1,23 +1,59 @@
-import mongoose, { Schema } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
-// Movie Schema
-const MovieSchema = new Schema({
-    title: { type: String, required: true },
-    genre: { type: String, required: true },
-    releaseDate: { type: Date, required: true },
-    duration: { type: Number, required: true },
-    rating: { type: Number, min: 0, max: 10 }
-});
+interface IListItem {
+    tmdbId: number;
+    title: string;
+    poster?: string;
+    year?: string;
+    genre?: string;
+    mediaType?: 'movie' | 'series';
+    addedAt: Date;
+}
 
-const Movie = mongoose.model('Movie', MovieSchema);
+export interface IList extends Document {
+    userId: Types.ObjectId;
+    name: string;
+    items: IListItem[];
+    createdAt: Date;
+    updatedAt: Date;
+}
 
-// List Schema
-const ListSchema = new Schema({
-    name: { type: String, required: true },
-    movies: [{ type: Schema.Types.ObjectId, ref: 'Movie' }],
-    createdAt: { type: Date, default: Date.now }
-});
+const ListItemSchema = new Schema<IListItem>(
+    {
+        tmdbId: { type: Number, required: true },
+        title: { type: String, required: true },
+        poster: { type: String, default: '' },
+        year: { type: String, default: '' },
+        genre: { type: String, default: '' },
+        mediaType: { type: String, enum: ['movie', 'series'], default: 'movie' },
+        addedAt: { type: Date, default: Date.now },
+    },
+    { _id: false }
+);
 
-const List = mongoose.model('List', ListSchema);
+const ListSchema = new Schema<IList>(
+    {
+        userId: {
+            type: Schema.Types.ObjectId,
+            ref: 'User',
+            required: true,
+            index: true,
+        },
+        name: {
+            type: String,
+            required: true,
+            trim: true,
+            minlength: 1,
+            maxlength: 80,
+        },
+        items: {
+            type: [ListItemSchema],
+            default: [],
+        },
+    },
+    { timestamps: true }
+);
 
-export { Movie, List };
+ListSchema.index({ userId: 1, name: 1 }, { unique: true });
+
+export default mongoose.model<IList>('List', ListSchema);

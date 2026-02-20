@@ -11,16 +11,30 @@ interface Movie {
     id: number;
     title: string;
     genre: string;
-    year: number;
+    year: string;
     description: string;
     poster: string;
-    director: string;
-    actors: string[];
+}
+
+interface ListItem {
+    tmdbId: number;
+    title: string;
+    poster?: string;
+    year?: string;
+    genre?: string;
+    mediaType?: 'movie' | 'series';
+}
+
+interface UserList {
+    _id: string;
+    name: string;
+    items: ListItem[];
 }
 
 type CategoryType = 'popular' | 'top-rated' | 'now-playing';
 
 const API_BASE_URL = 'http://localhost:5000/api';
+const DEFAULT_LIST_NAMES = ['Favoritos', 'Interés'];
 
 const App: React.FC = () => {
     const movieContext = useContext(MovieContext);
@@ -49,7 +63,7 @@ const App: React.FC = () => {
         setSelectedYearFilter(null);
     };
     
-    const [filteredMovies, setFilteredMovies] = useState<any[]>([]);
+    const [filteredMovies, setFilteredMovies] = useState<Movie[]>([]);
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [searchInputValue, setSearchInputValue] = useState<string>('');
     const [selectedYear, setSelectedYear] = useState<string>('all');
@@ -64,6 +78,156 @@ const App: React.FC = () => {
     // New state for combined filters
     const [selectedGenreFilter, setSelectedGenreFilter] = useState<number | null>(null);
     const [selectedYearFilter, setSelectedYearFilter] = useState<number | null>(null);
+    const [currentView, setCurrentView] = useState<'browse' | 'user'>('browse');
+    const [userLists, setUserLists] = useState<UserList[]>([]);
+    const [listsLoading, setListsLoading] = useState(false);
+    const [listActionMessage, setListActionMessage] = useState<string>('');
+    const [newListNameByMovie, setNewListNameByMovie] = useState<Record<number, string>>({});
+    const [selectedCustomListByMovie, setSelectedCustomListByMovie] = useState<Record<number, string>>({});
+
+    const getMovieYear = (movie: any): string => {
+        return movie.year || movie.release_date?.split('-')[0] || '';
+    };
+
+    const getMovieGenre = (movie: any): string => {
+        if (movie.genre) {
+            return movie.genre;
+        }
+
+        if (Array.isArray(movie.genre_ids) && movie.genre_ids.length > 0) {
+            const names = movie.genre_ids
+                .map((id: number) => availableGenres.find(g => g.id === id)?.name)
+                .filter(Boolean);
+            return names.length > 0 ? names.slice(0, 2).join(', ') : 'Unknown';
+        }
+
+        return 'Unknown';
+    };
+
+    const normalizeMovie = (movie: any): Movie => ({
+        id: movie.id || movie.tmdbId,
+        title: movie.title || movie.name || 'Untitled',
+        genre: getMovieGenre(movie),
+        year: getMovieYear(movie),
+        description: movie.description || movie.overview || '',
+        poster: movie.poster || (movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : ''),
+    });
+
+    const fetchUserLists = async () => {
+        if (!isAuthenticated) {
+            return;
+        }
+
+        try {
+            setListsLoading(true);
+            const response = await axios.get(`${API_BASE_URL}/lists`);
+            setUserLists(response.data.lists || []);
+        } catch (err) {
+            setListActionMessage('No se pudieron cargar tus listas.');
+        } finally {
+            setListsLoading(false);
+        }
+    };
+
+    const addMovieToList = async (listId: string, movie: Movie) => {
+        await axios.post(`${API_BASE_URL}/lists/${listId}/movies`, {
+            movie: {
+                tmdbId: movie.id,
+                title: movie.title,
+                poster: movie.poster,
+                year: movie.year,
+                genre: movie.genre,
+                mediaType: 'movie',
+            }
+        });
+    };
+
+    const createList = async (name: string): Promise<UserList | undefined> => {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/lists`, { name });
+            return response.data.list;
+        } catch (err: any) {
+            setListActionMessage(err.response?.data?.message || 'No se pudo crear la lista.');
+            return undefined;
+        }
+    };
+
+    const handleAddToNamedList = async (movie: Movie, listName: string) => {
+        if (!isAuthenticated) {
+            setListActionMessage('Inicia sesión para guardar en listas.');
+            return;
+        }
+
+        try {
+            setListActionMessage('');
+            let targetList = userLists.find(list => list.name.toLowerCase() === listName.toLowerCase());
+
+            if (!targetList) {
+                targetList = await createList(listName);
+            }
+
+            if (!targetList) {
+                return;
+            }
+
+            await addMovieToList(targetList._id, movie);
+            await fetchUserLists();
+            setListActionMessage(`"${movie.title}" agregado a ${targetList.name}.`);
+        } catch (err: any) {
+            setListActionMessage(err.response?.data?.message || 'No se pudo agregar la película.');
+        }
+    };
+
+    const handleCreateAndAddCustomList = async (movie: Movie) => {
+        const rawName = newListNameByMovie[movie.id] || '';
+        const listName = rawName.trim();
+
+        if (!listName) {
+            setListActionMessage('Escribe un nombre de lista para crearla.');
+            return;
+        }
+
+        await handleAddToNamedList(movie, listName);
+        setNewListNameByMovie(prev => ({ ...prev, [movie.id]: '' }));
+    };
+
+    const handleAddToSelectedCustomList = async (movie: Movie) => {
+        const selectedListId = selectedCustomListByMovie[movie.id];
+
+        if (!selectedListId) {
+            setListActionMessage('Selecciona una lista personalizada.');
+            return;
+        }
+
+        const targetList = userLists.find(list => list._id === selectedListId);
+        if (!targetList) {
+            setListActionMessage('La lista seleccionada ya no existe.');
+            return;
+        }
+
+        await handleAddToNamedList(movie, targetList.name);
+    };
+
+    const handleRemoveFromList = async (listId: string, tmdbId: number) => {
+        try {
+            await axios.delete(`${API_BASE_URL}/lists/${listId}/movies/${tmdbId}`);
+            await fetchUserLists();
+            setListActionMessage('Elemento eliminado de la lista.');
+        } catch (err: any) {
+            setListActionMessage(err.response?.data?.message || 'No se pudo eliminar el elemento.');
+        }
+    };
+
+    const customLists = userLists.filter(list => !DEFAULT_LIST_NAMES.includes(list.name));
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            fetchUserLists();
+        } else {
+            setUserLists([]);
+            setCurrentView('browse');
+        }
+    }, [isAuthenticated]);
 
     // Fetch movies based on category or search
     useEffect(() => {
@@ -102,7 +266,8 @@ const App: React.FC = () => {
                 }
 
                 if (response) {
-                    setFilteredMovies(response.data.results || []);
+                    const normalizedResults = (response.data.results || []).map(normalizeMovie);
+                    setFilteredMovies(prev => currentPage > 1 ? [...prev, ...normalizedResults] : normalizedResults);
                 }
                 setLoading(false);
             } catch (err) {
@@ -112,7 +277,7 @@ const App: React.FC = () => {
         };
 
         fetchMovies();
-    }, [activeCategory, searchQuery, isSearchMode, currentPage, selectedGenreFilter, selectedYearFilter]);
+    }, [activeCategory, searchQuery, isSearchMode, currentPage, selectedGenreFilter, selectedYearFilter, availableGenres]);
 
     // Get unique years - always returns full range (1900-current year)
     const years = getYearsFromMovies([]);
@@ -183,6 +348,9 @@ const App: React.FC = () => {
                     {authLoading ? null : isAuthenticated && user ? (
                         <>
                             <span className="welcome-message">Welcome, {user.name}! 👋</span>
+                            <button className="login-button" onClick={() => setCurrentView(currentView === 'browse' ? 'user' : 'browse')}>
+                                {currentView === 'browse' ? 'Mi página' : 'Explorar'}
+                            </button>
                             <button className="logout-button" onClick={handleLogout}>Logout</button>
                         </>
                     ) : (
@@ -194,6 +362,48 @@ const App: React.FC = () => {
                 </div>
             </header>
 
+            {isAuthenticated && currentView === 'user' && (
+                <div className="user-page-card">
+                    <h2>👤 Mi Página</h2>
+                    <p className="user-page-subtitle">Tus listas guardadas de películas y series.</p>
+                    {listActionMessage && <div className="results-info">{listActionMessage}</div>}
+                    {listsLoading ? (
+                        <div className="loading">Cargando listas...</div>
+                    ) : userLists.length === 0 ? (
+                        <div className="no-results">No tienes listas todavía.</div>
+                    ) : (
+                        <div className="user-lists-grid">
+                            {userLists.map(list => (
+                                <div key={list._id} className="user-list-card">
+                                    <h3>{list.name}</h3>
+                                    <p>{list.items.length} elemento{list.items.length !== 1 ? 's' : ''}</p>
+                                    {list.items.length === 0 ? (
+                                        <div className="empty-list">Lista vacía</div>
+                                    ) : (
+                                        <div className="saved-items">
+                                            {list.items.map(item => (
+                                                <div key={`${list._id}-${item.tmdbId}`} className="saved-item-row">
+                                                    <span>{item.title} {item.year ? `(${item.year})` : ''}</span>
+                                                    <button
+                                                        className="mini-remove-button"
+                                                        onClick={() => handleRemoveFromList(list._id, item.tmdbId)}
+                                                    >
+                                                        Quitar
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {currentView === 'browse' && (
+            <>
+
             <div className="search-container">
                 <input
                     type="text"
@@ -201,7 +411,7 @@ const App: React.FC = () => {
                     placeholder="Search by title, director, or actor..."
                     value={searchInputValue}
                     onChange={(e) => setSearchInputValue(e.target.value)}
-                    onKeyPress={handleSearchKeyPress}
+                    onKeyDown={handleSearchKeyPress}
                 />
                 <div className="search-buttons">
                     <button className="search-button" onClick={handleSearch}>
@@ -282,7 +492,7 @@ const App: React.FC = () => {
             )}
 
             <div className="movies-grid">
-                {filteredMovies.map(movie => (
+                {Array.isArray(filteredMovies) && filteredMovies.map(movie => (
                     <div key={movie.id} className="movie-card">
                         <div className="movie-poster">
                             <img src={movie.poster} alt={movie.title} />
@@ -294,6 +504,35 @@ const App: React.FC = () => {
                                 <span className="movie-year">{movie.year}</span>
                             </div>
                             <p className="movie-description">{movie.description}</p>
+                            {isAuthenticated && (
+                                <div className="movie-list-actions">
+                                    <div className="quick-list-buttons">
+                                        <button onClick={() => handleAddToNamedList(movie, 'Favoritos')}>❤️ Favoritos</button>
+                                        <button onClick={() => handleAddToNamedList(movie, 'Interés')}>👀 Interés</button>
+                                    </div>
+                                    <div className="custom-list-row">
+                                        <select
+                                            value={selectedCustomListByMovie[movie.id] || ''}
+                                            onChange={(e) => setSelectedCustomListByMovie(prev => ({ ...prev, [movie.id]: e.target.value }))}
+                                        >
+                                            <option value="">Elegir lista</option>
+                                            {customLists.map(list => (
+                                                <option key={list._id} value={list._id}>{list.name}</option>
+                                            ))}
+                                        </select>
+                                        <button onClick={() => handleAddToSelectedCustomList(movie)}>Añadir</button>
+                                    </div>
+                                    <div className="custom-list-row">
+                                        <input
+                                            type="text"
+                                            placeholder="Nueva lista"
+                                            value={newListNameByMovie[movie.id] || ''}
+                                            onChange={(e) => setNewListNameByMovie(prev => ({ ...prev, [movie.id]: e.target.value }))}
+                                        />
+                                        <button onClick={() => handleCreateAndAddCustomList(movie)}>Crear + añadir</button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 ))}
@@ -316,6 +555,8 @@ const App: React.FC = () => {
                         Load More
                     </button>
                 </div>
+            )}
+            </>
             )}
             </>
             )}

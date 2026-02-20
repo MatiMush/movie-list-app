@@ -3,7 +3,7 @@ import axios from 'axios';
 
 interface User {
   id: string;
-  username: string;
+  name: string;
   email: string;
 }
 
@@ -12,7 +12,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (username: string, email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -35,7 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchUser = async () => {
     try {
       const response = await axios.get('http://localhost:5000/api/auth/me');
-      setUser(response.data);
+      setUser(response.data.user);
     } catch (error) {
       localStorage.removeItem('token');
       delete axios.defaults.headers.common['Authorization'];
@@ -55,9 +55,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(user);
   };
 
-  const register = async (username: string, email: string, password: string) => {
+  const register = async (name: string, email: string, password: string) => {
     const response = await axios.post('http://localhost:5000/api/auth/register', {
-      username,
+      name,
       email,
       password,
     });

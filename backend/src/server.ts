@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import connectDB from './config/database';
 import authRoutes from './routes/authRoutes';
 import movieRoutes from './routes/movieRoutes';
+import listRoutes from './routes/listRoutes';
 
 dotenv.config();
 
@@ -20,6 +21,7 @@ connectDB();
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/movies', movieRoutes);
+app.use('/api/lists', listRoutes);
 app.use('/api', movieRoutes);
 
 // Health check

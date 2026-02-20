@@ -91,6 +91,30 @@ router.get('/search', async (req, res) => {
     }
 });
 
+// Discover movies with filters
+router.get('/discover', async (req, res) => {
+    try {
+        console.log('🧭 Discovering movies with filters...');
+        const { genre, year, page = 1 } = req.query;
+
+        const response = await axios.get(`${TMDB_BASE_URL}/discover/movie`, {
+            params: {
+                api_key: TMDB_API_KEY,
+                with_genres: genre || undefined,
+                primary_release_year: year || undefined,
+                page
+            }
+        });
+
+        console.log('✅ Discover movies fetched successfully');
+        res.json(response.data);
+    } catch (error: any) {
+        console.error('❌ Error discovering movies:', error.message);
+        console.error('Response:', error.response?.data);
+        res.status(500).json({ message: 'Error discovering movies', error: error.message });
+    }
+});
+
 // Get genres
 router.get('/genres', async (req, res) => {
     try {
